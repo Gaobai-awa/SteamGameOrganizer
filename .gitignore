@@ -1,0 +1,24 @@
+# Build artifacts
+*.obj
+*.exe
+*.dll
+*.exp
+*.lib
+*.pdb
+
+# Data
+data/
+
+# Editor
+.vs/
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temp
+*.log
+*.tmp
