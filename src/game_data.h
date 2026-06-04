@@ -23,8 +23,9 @@ struct GameInfo {
 
 
     // --- 以下来自 localconfig.vdf (用户游玩数据) ---
-    uint64_t    total_playtime_min = 0;  // Steam 记录的总游玩时长 (分钟)
-    uint64_t    last_played        = 0;  // 最后启动时间 (Unix时间戳)
+    uint64_t    total_playtime_min       = 0;  // Steam 记录的总游玩时长 (分钟)
+    uint64_t    playtime_disconnected_min = 0; // 离线/无网时长的分钟数 (PlaytimeDisconnected)
+    uint64_t    last_played              = 0;  // 最后启动时间 (Unix时间戳)
 };
 
 // ============================================================

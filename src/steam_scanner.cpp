@@ -194,7 +194,7 @@ void SteamScanner::read_localconfig(const std::string& config_path) {
             for (const auto& [appid_str, app_data] : apps_node->children) {
                 try {
                     uint32_t appid = static_cast<uint32_t>(std::stoul(appid_str));
-                    
+
                     uint64_t playtime = 0;
                     uint64_t last_played = 0;
 
@@ -211,6 +211,19 @@ void SteamScanner::read_localconfig(const std::string& config_path) {
                     }
                     else {
                         m_playtime_data[appid] = { playtime, last_played };
+                    }
+
+                    // 读取离线游玩时长 (PlaytimeDisconnected)
+                    if (app_data.type == VDFType::Object) {
+                        uint64_t playtime_dc = app_data.get_uint64("PlaytimeDisconnected");
+                        if (playtime_dc > 0) {
+                            auto dcit = m_playtime_disconnected.find(appid);
+                            if (dcit != m_playtime_disconnected.end()) {
+                                if (playtime_dc > dcit->second) dcit->second = playtime_dc;
+                            } else {
+                                m_playtime_disconnected[appid] = playtime_dc;
+                            }
+                        }
                     }
                 }
                 catch (...) {
@@ -230,6 +243,7 @@ void SteamScanner::read_localconfig(const std::string& config_path) {
 std::map<uint32_t, std::pair<uint64_t, uint64_t>> 
 SteamScanner::read_user_playtime(const std::string& steam_path) {
     m_playtime_data.clear();
+    m_playtime_disconnected.clear();
 
     std::string userdata_path = steam_path + "/userdata";
     
@@ -440,6 +454,11 @@ GameInfo SteamScanner::appinfo_to_gameinfo(const AppInfoEntry& app) {
         info.total_playtime_min = it->second.first;
         info.last_played        = it->second.second;
     }
+    // 合并离线游玩时长 (PlaytimeDisconnected)
+    auto dcit = m_playtime_disconnected.find(info.appid);
+    if (dcit != m_playtime_disconnected.end()) {
+        info.playtime_disconnected_min = dcit->second;
+    }
     return info;
 }
 
@@ -548,5 +567,3 @@ std::vector<GameInfo> SteamScanner::scan_from_appinfo(bool show_tools) {
     std::cout << "[信息] 通过 appinfo.vdf 共发现 " << m_games.size() << " 个 App\n";
     return m_games;
 }
-
-

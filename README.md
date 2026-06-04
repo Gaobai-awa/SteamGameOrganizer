@@ -32,9 +32,9 @@
 
 ### 启动与统计
 - **智能启动** — 调用 Steam URI 协议启动游戏（与 Steam 客户端相同的行为）
+- **Steam 时长同步** — 从 `localconfig.vdf` 读取 Steam 官方记录的 `Playtime`（总分钟数）+ `PlaytimeDisconnected`（离线游玩分钟数）+ `LastPlayed`（最后启动 Unix 时间戳）
 - **独立时长统计** — 不依赖 Steam 客户端，自己记录每次启动会话
 - **启动次数** — 每个游戏独立的会话计数器
-- **最后启动时间** — 在列表中显示
 - **图标显示** — 从 Steam 缓存读取库图标，ImGui 渲染
 
 ### 搜索与过滤

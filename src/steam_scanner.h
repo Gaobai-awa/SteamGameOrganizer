@@ -65,6 +65,8 @@ private:
     std::vector<GameInfo> m_games;
     // appid -> {total_playtime_min, last_played}
     std::map<uint32_t, std::pair<uint64_t, uint64_t>> m_playtime_data;
+    // appid -> playtime_disconnected_min (离线模式下的游玩分钟数)
+    std::map<uint32_t, uint64_t> m_playtime_disconnected;
     // 是否显示 type=tool 的 App (Dedicated Server / SDK 等)
     bool m_show_tools = false;
 };
