@@ -105,12 +105,15 @@ bool SteamLauncherGUI::init(HINSTANCE hInstance) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.IniFilename = nullptr;  // no imgui.ini
 
-    // 字体加载:
-    // 1. 用 GetGlyphRangesChineseFull() (覆盖全部 2 万 + 简体中文字符)
-    //    包含 "转", "橙", "帕" 等非常用字
-    // 2. 字号压到 14, Oversample=false 省内存
-    // 3. 如果全字符集加载失败, 降级到 Common (3500 字)
+    // 字体加载策略 (按优先级尝试):
+    // 1. 项目自带的 luoliti.ttf (打包在 bin/ 目录, 用相对路径, 不依赖系统)
+    // 2. Windows 系统自带的 msyh.ttc/msyh.ttf/simhei.ttf/segoeui.ttf (后备)
+    // 优先用 GetGlyphRangesChineseFull() (覆盖全部 2 万 + 简体中文字符)
+    // 如果失败降级到 ChineseSimplifiedCommon (3500 常用字)
     const char* font_candidates[] = {
+        "fonts/luoliti.ttf",
+        "luoliti.ttf",
+        "../fonts/luoliti.ttf",
         "C:/Windows/Fonts/msyh.ttc",
         "C:/Windows/Fonts/msyh.ttf",
         "C:/Windows/Fonts/simhei.ttf",
@@ -129,7 +132,8 @@ bool SteamLauncherGUI::init(HINSTANCE hInstance) {
                 io.Fonts->GetGlyphRangesChineseFull());
             if (f) {
                 font_loaded = true;
-                OutputDebugStringA("init: font loaded ChineseFull 18px\n");
+                char dbg[512]; snprintf(dbg, sizeof(dbg), "init: font loaded ChineseFull from %s\n", p);
+                OutputDebugStringA(dbg);
                 break;
             }
             // 降级: ChineseSimplifiedCommon (3500 常用字)
