@@ -699,12 +699,12 @@ void SteamLauncherGUI::draw_center_gamelist() {
     // 批量模式的多选框用第一列里嵌一个 Checkbox, 不增加列数
     if (ImGui::BeginTable("##gamelist", 6, flags)) {
         // 表头: 不使用 ImGui 默认字符 (msyh 字体不支持 ↑↓), 自己画
-        ImGui::TableSetupColumn("\u540D\u79F0", ImGuiTableColumnFlags_WidthStretch, 3.0f);
-        ImGui::TableSetupColumn("AppID",        ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("\u65F6\u957F", ImGuiTableColumnFlags_WidthStretch, 1.2f);
-        ImGui::TableSetupColumn("\u6210\u5C31", ImGuiTableColumnFlags_WidthStretch, 0.7f);
-        ImGui::TableSetupColumn("\u72B6\u6001", ImGuiTableColumnFlags_WidthStretch, 0.9f);
-        ImGui::TableSetupColumn("\u6700\u540E\u542F\u52A8", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+        ImGui::TableSetupColumn("\u540D\u79F0", ImGuiTableColumnFlags_WidthStretch, 2.6f);
+        ImGui::TableSetupColumn("AppID",        ImGuiTableColumnFlags_WidthStretch, 0.9f);
+        ImGui::TableSetupColumn("\u65F6\u957F", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableSetupColumn("\u6210\u5C31", ImGuiTableColumnFlags_WidthStretch, 1.1f);
+        ImGui::TableSetupColumn("\u72B6\u6001", ImGuiTableColumnFlags_WidthStretch, 0.8f);
+        ImGui::TableSetupColumn("\u6700\u540E\u542F\u52A8", ImGuiTableColumnFlags_WidthStretch, 1.6f);
         ImGui::TableHeadersRow();
         // 排序: 点击表头切换 (用 TableSetColumnIndex + IsItemClicked)
         for (int col = 0; col < 6; ++col) {
@@ -773,10 +773,10 @@ void SteamLauncherGUI::draw_center_gamelist() {
             ImGui::Text("%u", g.appid);
 
             ImGui::TableSetColumnIndex(2);
-            int64_t pt = m_playtime.get_total_playtime(g.appid);
+            int64_t pt = g.total_playtime_min;
             if (pt > 0) {
-                int h = (int)(pt / 3600);
-                int m = (int)((pt % 3600) / 60);
+                int h = (int)(pt / 60);
+                int m = (int)(pt % 60);
                 ImGui::Text("%dh %dm", h, m);
             } else {
                 ImGui::TextDisabled("-");
@@ -847,11 +847,34 @@ void SteamLauncherGUI::draw_right_detail() {
             if (!g.install_dir.empty()) {
                 ImGui::TextDisabled("\u5B89\u88C5\u76EE\u5F55: %s", g.install_dir.c_str());  // 安装目录
             }
-            int64_t pt = m_playtime.get_total_playtime(g.appid);
+            // 游戏时长 (从 localconfig.vdf 读 Steam 官方数据, 每个游戏独立)
+            int64_t pt = g.total_playtime_min;
             if (pt > 0) {
-                int h = (int)(pt / 3600);
-                int m = (int)((pt % 3600) / 60);
-                ImGui::TextDisabled("\u603B\u65F6\u957F: %d\u5C0F\u65F6%d\u5206", h, m);  // 总时长
+                int h = (int)(pt / 60);
+                int m = (int)(pt % 60);
+                ImGui::TextDisabled("\u603B\u65F6\u957F: %d\u5C0F\u65F6%d\u5206 (%d \u5206\u949F)", h, m, (int)pt);
+            } else {
+                ImGui::TextDisabled("\u603B\u65F6\u957F: -");
+            }
+            // 离线游玩时长 (Steam 离线模式累计)
+            if (g.playtime_disconnected_min > 0) {
+                int h = (int)(g.playtime_disconnected_min / 60);
+                int m = (int)(g.playtime_disconnected_min % 60);
+                ImGui::TextDisabled("\u79BB\u7EBF\u65F6\u957F: %d\u5C0F\u65F6%d\u5206", h, m);
+            }
+            // 最后启动时间 (Unix timestamp 转本地时间)
+            if (g.last_played > 0) {
+                time_t t = (time_t)g.last_played;
+                char buf[64];
+                struct tm tm_buf;
+                localtime_s(&tm_buf, &t);
+                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &tm_buf);
+                ImGui::TextDisabled("\u6700\u540E\u542F\u52A8: %s", buf);
+            }
+            // 成就数 (nAchieved/nTotal)
+            if (g.achievements_total > 0) {
+                ImGui::TextColored(Theme::Accent(), "\u6210\u5C31: %d/%d",
+                    g.achievements_unlocked, g.achievements_total);
             }
             auto cats = m_categories.get_categories_for_game(g.appid);
             if (!cats.empty()) {

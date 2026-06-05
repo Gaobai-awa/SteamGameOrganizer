@@ -162,6 +162,11 @@ GameInfo SteamScanner::parse_appmanifest(const std::string& filepath, const std:
             info.total_playtime_min = it->second.first;
             info.last_played        = it->second.second;
         }
+        // 合并离线游玩时长
+        auto dcit = m_playtime_disconnected.find(info.appid);
+        if (dcit != m_playtime_disconnected.end()) {
+            info.playtime_disconnected_min = dcit->second;
+        }
     }
     catch (const std::exception& e) {
         std::cerr << "[警告] 无法解析 " << filepath << ": " << e.what() << "\n";
