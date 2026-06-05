@@ -791,7 +791,8 @@ void SteamLauncherGUI::draw_center_gamelist() {
                 ImGui::TextDisabled("-");
             }
 
-ImGui::TableSetColumnIndex(3);
+            // 第 4 列: 安装状态
+            ImGui::TableSetColumnIndex(4);
             bool installed = !g.install_dir.empty();
             if (installed) {
                 ImGui::TextColored(Theme::Green(), "\u5DF2\u5B89\u88C5");  // 已安装
