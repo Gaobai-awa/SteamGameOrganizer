@@ -4,6 +4,9 @@
 #include <filesystem>
 #include <algorithm>
 #include <functional>
+#include <fstream>
+#include <iterator>
+#include <utility>
 #include <iostream>
 
 namespace fs = std::filesystem;
@@ -338,6 +341,12 @@ std::vector<GameInfo> SteamScanner::scan_all_games() {
                         // installdir 为空 → DLC
                         info.is_dlc = true;
                     }
+                    // 读取离线成就数
+                    if (!info.is_dlc) {
+                        auto ach = read_achievements(info.appid);
+                        info.achievements_unlocked = ach.first;
+                        info.achievements_total   = ach.second;
+                    }
                     m_games.push_back(info);
                 }
             }
@@ -345,7 +354,7 @@ std::vector<GameInfo> SteamScanner::scan_all_games() {
     }
 
     // 按名称排序
-    std::sort(m_games.begin(), m_games.end(), 
+    std::sort(m_games.begin(), m_games.end(),
         [](const GameInfo& a, const GameInfo& b) {
             return a.name < b.name;
         });
@@ -555,6 +564,13 @@ std::vector<GameInfo> SteamScanner::scan_from_appinfo(bool show_tools) {
             }
         }
 
+        // 读取离线成就数
+        if (!info.is_dlc) {
+            auto ach = read_achievements(info.appid);
+            info.achievements_unlocked = ach.first;
+            info.achievements_total   = ach.second;
+        }
+
         m_games.push_back(info);
     }
 
@@ -566,4 +582,55 @@ std::vector<GameInfo> SteamScanner::scan_from_appinfo(bool show_tools) {
 
     std::cout << "[信息] 通过 appinfo.vdf 共发现 " << m_games.size() << " 个 App\n";
     return m_games;
+}
+
+// ============================================================
+// 读取 librarycache/<appid>.json 里的成就统计
+// 返回 {已解锁, 总数}; 找不到时返回 {0, 0}
+// ============================================================
+std::pair<int, int> SteamScanner::read_achievements(uint32_t appid) {
+    if (m_steam_path.empty()) return {0, 0};
+
+    std::string userdata = m_steam_path + "/userdata";
+    std::error_code ec;
+    if (!fs::exists(userdata, ec)) return {0, 0};
+
+    for (const auto& entry : fs::directory_iterator(userdata, ec)) {
+        if (!entry.is_directory(ec)) continue;
+        std::string cache_path = entry.path().string()
+            + "/config/librarycache/" + std::to_string(appid) + ".json";
+        if (!fs::exists(cache_path, ec)) continue;
+
+        std::ifstream f(cache_path, std::ios::binary);
+        if (!f) continue;
+        std::string text((std::istreambuf_iterator<char>(f)),
+                          std::istreambuf_iterator<char>());
+        f.close();
+
+        // 找 "achievements" -> "data" 段
+        size_t ach = text.find("\"achievements\"");
+        if (ach == std::string::npos) continue;
+        size_t dp = text.find("\"data\"", ach);
+        if (dp == std::string::npos) continue;
+
+        int n_total = 0, n_achieved = 0;
+        // 抓 nTotal
+        size_t p = text.find("\"nTotal\"", dp);
+        if (p != std::string::npos) {
+            p = text.find(':', p);
+            if (p != std::string::npos) ++p;
+            while (p < text.size() && (text[p] == ' ' || text[p] == '\t')) ++p;
+            n_total = std::atoi(text.c_str() + p);
+        }
+        // 抓 nAchieved
+        p = text.find("\"nAchieved\"", dp);
+        if (p != std::string::npos) {
+            p = text.find(':', p);
+            if (p != std::string::npos) ++p;
+            while (p < text.size() && (text[p] == ' ' || text[p] == '\t')) ++p;
+            n_achieved = std::atoi(text.c_str() + p);
+        }
+        if (n_total > 0) return {n_achieved, n_total};
+    }
+    return {0, 0};
 }

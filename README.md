@@ -33,6 +33,8 @@
 ### 启动与统计
 - **智能启动** — 调用 Steam URI 协议启动游戏（与 Steam 客户端相同的行为）
 - **Steam 时长同步** — 从 `localconfig.vdf` 读取 Steam 官方记录的 `Playtime`（总分钟数）+ `PlaytimeDisconnected`（离线游玩分钟数）+ `LastPlayed`（最后启动 Unix 时间戳）
+- **离线成就** — 从 `librarycache/<appid>.json` 读取 `nAchieved/nTotal`，在列表显示 `X/Y` 格式（如 `5/10`）
+- **底部总时长滑条** — 状态栏右侧显示所有游戏总时长的进度条
 - **独立时长统计** — 不依赖 Steam 客户端，自己记录每次启动会话
 - **启动次数** — 每个游戏独立的会话计数器
 - **图标显示** — 从 Steam 缓存读取库图标，ImGui 渲染

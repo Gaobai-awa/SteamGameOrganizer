@@ -26,6 +26,10 @@ struct GameInfo {
     uint64_t    total_playtime_min       = 0;  // Steam 记录的总游玩时长 (分钟)
     uint64_t    playtime_disconnected_min = 0; // 离线/无网时长的分钟数 (PlaytimeDisconnected)
     uint64_t    last_played              = 0;  // 最后启动时间 (Unix时间戳)
+
+    // --- 以下来自 librarycache/<appid>.json (成就缓存) ---
+    int         achievements_unlocked = 0;    // 已解锁成就数
+    int         achievements_total   = 0;    // 总成就数
 };
 
 // ============================================================

@@ -697,16 +697,17 @@ void SteamLauncherGUI::draw_center_gamelist() {
                 ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY;
     // 注意: 始终 5 列 (icon+名称 / AppID / 时长 / 状态 / 最后启动)
     // 批量模式的多选框用第一列里嵌一个 Checkbox, 不增加列数
-    if (ImGui::BeginTable("##gamelist", 5, flags)) {
+    if (ImGui::BeginTable("##gamelist", 6, flags)) {
         // 表头: 不使用 ImGui 默认字符 (msyh 字体不支持 ↑↓), 自己画
         ImGui::TableSetupColumn("\u540D\u79F0", ImGuiTableColumnFlags_WidthStretch, 3.0f);
         ImGui::TableSetupColumn("AppID",        ImGuiTableColumnFlags_WidthStretch, 1.0f);
         ImGui::TableSetupColumn("\u65F6\u957F", ImGuiTableColumnFlags_WidthStretch, 1.2f);
-        ImGui::TableSetupColumn("\u72B6\u6001", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableSetupColumn("\u6210\u5C31", ImGuiTableColumnFlags_WidthStretch, 0.7f);
+        ImGui::TableSetupColumn("\u72B6\u6001", ImGuiTableColumnFlags_WidthStretch, 0.9f);
         ImGui::TableSetupColumn("\u6700\u540E\u542F\u52A8", ImGuiTableColumnFlags_WidthStretch, 1.5f);
         ImGui::TableHeadersRow();
         // 排序: 点击表头切换 (用 TableSetColumnIndex + IsItemClicked)
-        for (int col = 0; col < 5; ++col) {
+        for (int col = 0; col < 6; ++col) {
             ImGui::TableSetColumnIndex(col);
             char sort_arrow = ' ';
             if (m_sort_column == col) sort_arrow = m_sort_ascending ? '^' : 'v';
@@ -781,7 +782,16 @@ void SteamLauncherGUI::draw_center_gamelist() {
                 ImGui::TextDisabled("-");
             }
 
+                        // 第 3 列: 成就数 (nAchieved/nTotal)
             ImGui::TableSetColumnIndex(3);
+            if (g.achievements_total > 0) {
+                ImGui::TextColored(Theme::Accent(), "%d/%d",
+                    g.achievements_unlocked, g.achievements_total);
+            } else {
+                ImGui::TextDisabled("-");
+            }
+
+ImGui::TableSetColumnIndex(3);
             bool installed = !g.install_dir.empty();
             if (installed) {
                 ImGui::TextColored(Theme::Green(), "\u5DF2\u5B89\u88C5");  // 已安装
@@ -789,7 +799,7 @@ void SteamLauncherGUI::draw_center_gamelist() {
                 ImGui::TextColored(Theme::Red(), "\u672A\u5B89\u88C5");  // 未安装
             }
 
-            ImGui::TableSetColumnIndex(4);
+            ImGui::TableSetColumnIndex(5);
             if (g.last_played > 0) {
                 // 格式化为 YYYY-MM-DD HH:MM
                 time_t t = (time_t)g.last_played;
@@ -870,6 +880,31 @@ void SteamLauncherGUI::draw_statusbar() {
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar);
     ImGui::Text("%s", m_status_text);
+
+    // 右侧: 全部游戏总时长 + 滑条 (相对最长游戏)
+    int64_t total_min = 0;
+    for (const auto& g : m_scanner.games()) {
+        total_min += g.total_playtime_min;
+    }
+    int64_t max_min = 1;
+    for (const auto& g : m_scanner.games()) {
+        if (g.total_playtime_min > max_min) max_min = g.total_playtime_min;
+    }
+    int total_h = (int)(total_min / 60);
+    int total_m = (int)(total_min % 60);
+    char total_str[64];
+    snprintf(total_str, sizeof(total_str), "总时长: %dh %dm", total_h, total_m);
+
+    float slider_w = 200.0f;
+    ImGui::SameLine(ImGui::GetWindowWidth() - slider_w - 220);
+    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, Theme::Accent2());
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.10f, 0.10f, 0.15f, 1.0f));
+    ImGui::ProgressBar((float)total_min / (float)max_min, ImVec2(slider_w, 14), total_str);
+    ImGui::PopStyleColor(2);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("总时长 (相对最长游戏: %lldh %lldm)",
+            max_min / 60, max_min % 60);
+    }
 
     // Toast notification
     if (!m_toast_msg.empty() && ImGui::GetTime() < m_toast_until) {

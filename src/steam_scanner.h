@@ -50,6 +50,10 @@ public:
     std::map<uint32_t, std::pair<uint64_t, uint64_t>>
         read_user_playtime(const std::string& steam_path);
 
+    // 从 librarycache/<appid>.json 读取成就数 (nAchieved/nTotal)
+    // 返回 {已解锁, 总数}; 没有缓存时返回 {0, 0}
+    std::pair<int, int> read_achievements(uint32_t appid);
+
 private:
     // 解析单个 appmanifest 文件
     GameInfo parse_appmanifest(const std::string& filepath, const std::string& library_path);
