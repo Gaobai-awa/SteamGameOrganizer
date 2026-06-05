@@ -1566,8 +1566,8 @@ void SteamLauncherGUI::rebuild_filtered_indices() {
         }
         m_filtered_indices.push_back(i);
     }
-    // 排序: 0=名称 1=AppID 2=时长 3=状态 4=最后启动
-    if (m_sort_column >= 0 && m_sort_column <= 4) {
+    // 排序: 0=名称 1=AppID 2=时长 3=成就 4=状态 5=最后启动
+    if (m_sort_column >= 0 && m_sort_column <= 5) {
         std::sort(m_filtered_indices.begin(), m_filtered_indices.end(),
             [this, &games](int a, int b) {
                 const GameInfo& ga = games[a];
@@ -1583,9 +1583,16 @@ void SteamLauncherGUI::rebuild_filtered_indices() {
                         break;
                     }
                     case 1: cmp = (int)ga.appid - (int)gb.appid; break;
-                    case 2: cmp = (int)(m_playtime.get_total_playtime(ga.appid) - m_playtime.get_total_playtime(gb.appid)); break;
-                    case 3: cmp = (int)(!ga.install_dir.empty()) - (int)(!gb.install_dir.empty()); break;
-                    case 4: cmp = (ga.last_played < gb.last_played) ? -1 : ((ga.last_played > gb.last_played) ? 1 : 0); break;
+                    case 2: cmp = (int)(ga.total_playtime_min - gb.total_playtime_min); break;
+                    case 3: {
+                        // 成就: 未解锁的排最后; 然后按 (已解锁/总) 进度
+                        int progA = (ga.achievements_total > 0) ? (ga.achievements_unlocked * 1000 / ga.achievements_total) : -1;
+                        int progB = (gb.achievements_total > 0) ? (gb.achievements_unlocked * 1000 / gb.achievements_total) : -1;
+                        cmp = progA - progB;
+                        break;
+                    }
+                    case 4: cmp = (int)(!ga.install_dir.empty()) - (int)(!gb.install_dir.empty()); break;
+                    case 5: cmp = (ga.last_played < gb.last_played) ? -1 : ((ga.last_played > gb.last_played) ? 1 : 0); break;
                 }
                 if (cmp == 0) cmp = (int)ga.appid - (int)gb.appid;
                 return m_sort_ascending ? (cmp < 0) : (cmp > 0);
