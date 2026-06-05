@@ -179,7 +179,7 @@ bool SteamLauncherGUI::init(HINSTANCE hInstance) {
     refresh_game_list();
     update_status_text();
 
-    ShowWindow(m_hwnd, SW_SHOWMAXIMIZED);  // 启动时最大化, 避免 16:9 -> 4:3 拉伸
+    ShowWindow(m_hwnd, SW_SHOWNORMAL);     // 通常窗口化 (16:9 默认), 作者喜爱
     UpdateWindow(m_hwnd);
     return true;
 }
